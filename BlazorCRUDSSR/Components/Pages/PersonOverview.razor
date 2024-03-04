@@ -1,0 +1,77 @@
+﻿@page "/persons"
+@inject DataContext Context
+@inject NavigationManager NavigationManager
+@attribute [StreamRendering]
+@using Microsoft.EntityFrameworkCore;
+
+
+
+<PageTitle>Personers</PageTitle>
+<h3>Översikt över Personer</h3>
+
+@if(persons.Count == 0)
+{
+    <p><em>Loading Persons...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Firstname</th>
+                <th>Lastname</th>
+                <th>City</th>
+                <th>BirthYear</th>
+                <th>FavoriteGame</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in persons)
+            {
+                <tr>
+                    <td>@p.FirstName</td>
+                    <td>@p.LastName</td>
+                    <td>@p.City</td>
+                    <td>@p.BirthYear</td>
+                    <td>@(p.FavoriteGame?.Title ?? "N/A")</td>
+                   @*  <td><a href="edit-p/@p.Id">Edit</a></td> *@
+                    @* <td>
+                        <form method="post" data-enhance
+                            @formname="@($"DeleteGameForm{game.Id}")" 
+                            @onsubmit="() => DeleteGame(game.Id)">
+                            <button class="btn btn-link">Delete</button>
+                            <AntiforgeryToken />
+                        </form>
+                    </td> *@
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a href="/edit-person">Add Person</a>
+
+@code {
+    List<Person> persons = new List<Person>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        persons = await Context.Persons
+            .Include(p => p.FavoriteGame) // Lägg till denna rad för att ladda in relaterade speldata
+            .ToListAsync();
+    }
+
+
+    // async Task DeleteGame(int id)
+    // {
+    //     var dbP = await Context.Persons.FindAsync(id);
+    //     if (dbP is not null)
+    //     {
+    //         Context.Remove(dbP);
+    //         await Context.SaveChangesAsync();
+    //         //NavigationManager.NavigateTo("/games");
+    //         persons = await Context.Persons.ToListAsync();
+    //     }
+    // }
+}

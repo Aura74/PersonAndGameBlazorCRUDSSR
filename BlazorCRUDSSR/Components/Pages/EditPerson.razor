@@ -1,0 +1,105 @@
+﻿@page "/edit-person"
+@page "/edit-person/{Id:int}"
+@inject DataContext Context
+
+@if(Id is null)
+{
+    <PageTitle>Add a New Person</PageTitle>
+    <h3>Add a New Person</h3>
+}
+else
+{
+    <PageTitle>Edit @CurrentPerson.FirstName</PageTitle>
+    <h3>Edit @CurrentPerson.FirstName</h3>
+}
+
+<EditForm Enhance Model="CurrentPerson" OnSubmit="HandleSubmit" FormName="PersonForm">
+    <div>
+        <label for="firstName">FirstName</label>
+        <InputText id="firstName" @bind-Value="CurrentPerson.FirstName" class="form-control"></InputText>
+    </div>
+    <div>
+        <label for="lastName">LastName</label>
+        <InputText id="lastName" @bind-Value="CurrentPerson.LastName" class="form-control"></InputText>
+    </div>
+    <div>
+        <label for="birthYear">BirthYear</label>
+        <InputNumber id="birthYear" @bind-Value="CurrentPerson.BirthYear" class="form-control"></InputNumber>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+<p>@status</p>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; } = null;
+
+    [SupplyParameterFromForm]
+    public Person CurrentPerson { get; set; } = new();
+
+    private string status = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(Id is not null)
+        {
+            var p = await Context.Persons.FindAsync(Id);
+            if(p is not null)
+            {
+                CurrentPerson.FirstName ??= p.FirstName;
+                CurrentPerson.LastName ??= p.LastName;
+                CurrentPerson.BirthYear ??= p.BirthYear;
+            }
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        if (Id is not null)
+        {
+            await UpdatePerson();
+        }
+        else
+        {
+            await CreatePerson();
+        }
+    }
+
+    async Task UpdatePerson()
+    {
+        var dbP = await Context.Persons.FindAsync(Id);
+        if (dbP is not null)
+        {
+            dbP.FirstName = CurrentPerson.FirstName;
+            dbP.LastName = CurrentPerson.LastName;
+            dbP.BirthYear = CurrentPerson.BirthYear;
+
+            var result = await Context.SaveChangesAsync();
+
+            if (result == 1)
+            {
+                status = "Det lyckades";
+            }
+            else
+            {
+                status = "Något vart fel...";
+            }
+        }
+    }
+
+    async Task CreatePerson()
+    {
+        Context.Persons.Add(CurrentPerson);
+        var result = await Context.SaveChangesAsync();
+
+        if(result == 1)
+        {
+            status = "Det lyckades";
+        }
+        else
+        {
+            status = "Något vart fel...";
+        }
+    }
+}
